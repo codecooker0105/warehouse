@@ -1,26 +1,26 @@
-<img src="src/WebUI/src/assets/logo-long-color.png" style="zoom:20%;" /> 
+<img width="600" src=".github/logo.png" /> 
 
-🍕 A Clean Architecture + DDD sample project in ASP.NET Core 🍕
-
----------
+----------
 
 ![.NET Core](https://github.com/baratgabor/MyWarehouse/workflows/.NET%20Core/badge.svg)
 
----------
+----------
 
-Hola, muchachos! What you have here is a sample project consisting of an ASP.NET Core web API backend service and an Angular frontend (with Bootstrap).
+Hola, muchachos!
+
+What you have here is a sample project consisting of an ASP.NET Core web API backend service and an Angular frontend with Bootstrap.
 
 Finally decided it's time to have something on my GitHub that is actually relevant to my professional focus on ASP.NET Core, retiring those *god-awfully written*\* old classical ASP.NET projects I had on BitBucket. *(\*They had business logic in the controller actions. That's all I have to say about them.)*
 
 The following, rather informatively written documentation page has a two-fold purpose:
 
-1. To be – hopefully – useful for others who are looking to explore a similar direction in development.
+1. To be – hopefully – useful for others who wish to explore a similar direction in development.
 
 2. To provide a summary of my current approach to working with ASP.NET Core, and my current level of understanding thereof, so anyone who was interested in my skillset could easily review it in a single place.
 
 ---------
 **Contents:**
-[TOC]
+{:toc}
 
 ## Motivation
 
