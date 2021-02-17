@@ -54,6 +54,7 @@ The following, rather informatively written documentation page has a two-fold pu
   * [.Net 5 (C# 9) features](#net-5-c-9-features)
   * [More feature-rich Angular frontend](#more-feature-rich-angular-frontend)
 - [Potential improvements](#potential-improvements)
+- [How to set up to run locally](#how-to-set-up-to-run-locally)
 
 ## Motivation
 
@@ -109,7 +110,7 @@ In my humble, but perhaps cheeky, opinion, there are two key things to understan
 
    But, there is another pattern, called commanding, where you encapsulate an operation into an object, and execute that object with a handler. *Which is exactly what MediatR does.* And how do you select the handler with MediatR? Through a *service locator*, a.k.a. the [service locator anti-pattern](https://blog.ploeh.dk/2010/02/03/ServiceLocatorisanAnti-Pattern/).
 
-   TL;DR;: It's commanding with a service locator on top. Duh. But no matter how we call it, it's a pretty cool piece of code, and the service locator is arguably not that big of a deal here (although it does obfuscate what handler will actually execute).
+   TL;DR;: It's commanding with a service locator on top. Duh. But no matter how we call it, it's a pretty cool piece of code, and the service locator is arguably not that big of a deal here (although it does obfuscate what handler will actually execute). By the way, I didn't direct this against the developer of MediatR in any way; I'm 100% sure that Jimmy Bogard knows design patterns twenty times better than me, and it's just that name selection often has little to do with semantics, not to mention that projects can change in scope and direction.
 
 2. ##### MediatR has little to do with CQRS: 
 
@@ -183,7 +184,7 @@ But we all have to discover our own ways, based on our own experiences, followin
 - **Data-retrieval focused repositories:** I implemented traditional repositories due to the reasons explained below. I also followed the classical wisdom of not exposing `IQueryable` from the repositories, but I think in a vertical slice architecture it wouldn't be a categorical problem to do so, if it helps implementing some one-off queries in a way that avoids polluting the repositories.
   - **Cross cutting concerns:** There are some data-retrieval related general concerns, for example paging, ordering and filtering on list queries. DbContext might be a good place for these, but as I mentioned above, that is often filled with persistence mechanism related concerns. So I placed these into a base repository that is used to derive concrete repositories from for each aggregates.
   - **Aggregate level concerns:** You might want to define default filters, navigational property inclusions, or custom queries for certain aggregates, and repeating these things in all vertical slices just doesn't feel right, simply because you know that the given filtering or inclusion is a generalized concern for the aggregate. For example in `TransactionRepository` I ignored the query filters, because transactions cannot be deleted, and I wanted to list the transactions on soft-deleted partners and products as well. I also defined a special query for retrieving individual entities with all navigational properties included. But, in agreement with Jimmy Bogard, Jason Taylor, et al., I'd discourage filling a repository with a crapton of special queries that are used only for a *single operation*; that is absolutely a legacy approach. Unless the next point applies...
-  - **SQL-specific queries:** If you've worked with EF Core for longer than 5 minutes, you must know that it's not a transparent abstraction over the persistence mechanism. In fact its a leaky abstraction. When using SQL persistence you often end up having to write Linq queries that are specifically designed for SQL so the expression could be translated into a SQL statement (e.g. grouping and aggregating). I see some problems with including these SQL-specific queries in application code, because *it tightly couples application code to the persistence mechanism*. And if we do that, it arguably erases some of the benefit of using Clean Architecture.
+  - **SQL-specific queries:** If you've worked with EF Core for longer than 5 minutes, you must know that it's not a transparent abstraction over the persistence mechanism. In fact it's a leaky abstraction. When using SQL persistence you often end up having to write Linq queries that are specifically designed for SQL so the expression could be translated into a SQL statement (e.g. grouping and aggregating). I see some problems with including these SQL-specific queries in application code, because *it tightly couples application code to the persistence mechanism*. And if we do that, it arguably erases some of the benefit of using Clean Architecture.
 
 ### Logging extensions:
 
@@ -219,8 +220,55 @@ But we all have to discover our own ways, based on our own experiences, followin
 - **Actual warehouse features:** For example adding dimensions to products, and at the very least aggregating those dimensions to ascertain if the warehouse is full (after also designating a given warehouse capacity). But there is no end to these potential features, as warehouses are obviously complex structures, and I'm not that interested in actually making a working warehouse system, so the basis of consideration should be whether something is a good learning experience in DDD or API design.
 - **Swagger Codegen:** I didn't implement automatic code generation for the frontend services, and probably it would be a good idea to look into doing so.
 
+## How to set up to run locally
+
+It you wish to clone this repository and use it (for whatever purpose you see fit), you'll have to take care of the following:
+
+- Download and install **.NET 5 and ASP.NET Core 5 runtime** for the backend. The other project dependencies will be restored via NuGet.
+
+- Install **Node.js and npm package manager** on your machine, and run `npm install` in the `WebUI` project folder to restore the frontend packages. Frontend can be run with `ng serve`.
+
+- The less obvious one – **Secrets in configuration**:
+   - The backend system relies on multiple configuration values that are treated as 'secrets' and aren't part of the configuration committed to git. A `// Secret` comment identifies these in `WebApi.appsettings.json`.
+
+   - An excellent place for these secrets is the **User Secrets file**. You can access this file by right-clicking the `WebApi` project, and selecting **Manage User Secrets**.
+        - This opens a `secrets.json` file (which is actually located in your user profile folder, and not in the solution folder). In this json file you can enter any additional configuration values you'd want to see injected over the default appsettings.json (ideally only the secrets).
+     
+     - To set a nested configuration setting, you can use colon (`:`) as a separator. For example to set the `DefaultUsername` property inside `UserSeedSettings`, you can simply set a value for `"UserSeedSettings:DefaultUsername"`.
+     
+     - The following could be a valid configuration that should allow running the solution in development mode (keep `LogglySettings:WriteToLoggly` and `AzureKeyVaultSettings:AddToConfiguration` as false):
+     
+          ```json
+          {    
+            "UserSeedSettings:SeedDefaultUser": true,
+            "UserSeedSettings:DefaultUsername": "User",
+            "UserSeedSettings:DefaultPassword": "Password",
+            "UserSeedSettings:DefaultEmail": "something@gmail.com",
+            "ConnectionStrings:DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=MyWarehouseDb;Trusted_Connection=True;MultipleActiveResultSets=true",
+            "AuthenticationSettings:JwtSigningKeyBase64": "e09053f6847d466b8f243d9522c340ef234sdfds",
+          }
+          ```
+     
+   - Alternative to the user secrets file is using **environment variables**.
+
+     - You can set nested configuration properties with environment variables as well. This can be achieved by using a colon (`:`) separator as explained above, or on a Linux system you can use a double underscore (`__`) separator. Actually both should work on Windows, so it's generally safer to use double underscore.
+
+     - You can even set array values. For example to set the `CorsSettings.AllowedOrigins` array, which contains the list of hosts that are allowed to access the backend API, you could use the following format*:
+
+       `CorsSettings__AllowedOrigins__0 = http://frontendlocation.com`
+
+       `CorsSettings__AllowedOrigins__1 = https://frontendlocation.com`
+
+       *(\*Don't include a trailing slash `/` character, for the love of god, or any capital letters, because the host checking is absolutely primitive; it's basically just doing [a case-sensitive ordinal string comparison](https://github.com/dotnet/aspnetcore/blob/461c4ece84ef5e7385249994645a3262717d3ca5/src/Middleware/CORS/src/Infrastructure/CorsPolicy.cs#L179) with the host contained in `HttpContext`. And if CORS tells you that `CORS Policy Execution Failed`, that actually means that CORS policy execution succeeded, it just ascertained that the host should not be allowed.)*
+
+   - And of course you can just set them right in `appsettings.json` too. Nothing horrible will happen. It's just a good idea to get familiar with the proper ways to inject secret configuration values into the solution, because otherwise you can end up accidentally committing these to Git repos. The demo backend system hosted in Azure gets them from an Azure Key Vault, for example.
+
+- You should be able to log in with the seeded default user account details.
+
+- Sample data will be automatically generated in the database (unless `ApplicationDbSettings:AutoSeed` is set to `false`), so don't be surprised to see a bunch of products, partners and transactions.
+
 ## In conclusion
 
-Thank you for your interest in this project and/or in this lengthy documentation page. I recognize that my style of writing readmes is different than what people usually do on GitHub, but since I don't publish on any platform I usually have plenty of things bottled up, so it just feels *nice* to write about them in a context where they are at least relevant.
+Thank you for your interest in this project and/or in this lengthy documentation page. I recognize that my style of writing readmes is different from what people usually do on GitHub, but since I don't publish on any platform I usually have plenty of things bottled up, so it just feels *nice* to write about them in a context where they are at least relevant.
 
 I'm always open to improving my designs, and, as I mentioned, this was pretty much my first foray into DDD, so feel free to suggest improvements if you'd like to.
