@@ -1,4 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("MyWarehouse.Domain.UnitTests")]
+[assembly: InternalsVisibleTo("Domain.UnitTests")]
  namespace Domain { }

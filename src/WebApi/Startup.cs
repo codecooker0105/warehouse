@@ -12,7 +12,7 @@ using System.Text.Json;
 using MyWarehouse.WebApi.CORS;
 using MyWarehouse.Infrastructure;
 
-namespace MyWarehouse.WebApi
+namespace MyWarehouse
 {
     public class Startup
     {
