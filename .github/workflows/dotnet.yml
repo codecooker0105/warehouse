@@ -1,13 +1,8 @@
-
-# This workflow runs the unit tests and integration tests for the backend.
-# Integration tests use real SQL database, but fortunately windows-latest
-# image contains support for SQL Express localDb.
-# This approach is significantly simpler than running it via docker-compose,
-# although, yes, it's more prone to breaking, since it's not isolated.
-
 name: .NET Core
 
 on:
+  push:
+    branches: [ master ]
   pull_request:
     branches: [ master ]
   workflow_dispatch:
@@ -15,7 +10,7 @@ on:
 jobs:
   build:
 
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
@@ -26,16 +21,6 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore -c Release
+      run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build -c Release --verbosity normal
-      env:
-        UserSeedSettings__SeedDefaultUser: false
-        AuthenticationSettings__JwtSigningKeyBase64: e09053f6847d466b8f243d9522c340ef234sdfds # Not actually used.
-        SwaggerSettings__UseSwagger: false
-    - name: Save build artifact
-      if: github.ref == 'refs/heads/chore/improve-ci-cd' # Change it to main once finalized
-      uses: actions/upload-artifact@v2
-      with: 
-        name: backend-release-master
-        path: src/WebApi
+      run: dotnet test --no-build --verbosity normal --filter FullyQualifiedName!~MyWarehouse.Application.IntegrationTests
